@@ -1,0 +1,29 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # الخطوة 1: سحب الكود
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # الخطوة 2: الاتصال بالسيرفر والنشر
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/projects/webstack
+            git pull origin main
+            docker compose down
+            docker compose up -d --build
+            docker compose ps
