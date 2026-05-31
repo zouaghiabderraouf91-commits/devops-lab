@@ -1,0 +1,12 @@
+# شهادات SSL
+nginx/certs/
+
+# Logs
+logs/
+
+# Backups
+../backups/
+
+# بيئة محلية
+.env
+*.env
