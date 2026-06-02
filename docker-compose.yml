@@ -1,4 +1,7 @@
 services:
+  # ==================
+  # Application Stack
+  # ==================
   app:
     build: ./app
     container_name: devops-app
@@ -9,7 +12,8 @@ services:
     networks:
       - webnet
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      test: ["CMD", "python", "-c", 
+             "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -30,6 +34,71 @@ services:
     depends_on:
       - app
 
+  # ==================
+  # Monitoring Stack
+  # ==================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: devops-prometheus
+    restart: unless-stopped
+    
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=15d'
+    networks:
+      - webnet
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: devops-grafana
+    restart: unless-stopped
+    
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=DevOps2024!
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_DOMAIN=devops.local
+      - GF_SERVER_ROOT_URL=https://devops.local/grafana
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    networks:
+      - webnet
+    depends_on:
+      - prometheus
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: devops-node-exporter
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+    networks:
+      - webnet
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: devops-cadvisor
+    restart: unless-stopped
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - webnet
+
 networks:
   webnet:
     driver: bridge
+
+volumes:
+  prometheus_data:
+  grafana_data:
