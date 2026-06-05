@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webstack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webstack
+  template:
+    metadata:
+      labels:
+        app: webstack
+    spec:
+      containers:
+      - name: webstack-app
+        image: webstack-app:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5000
